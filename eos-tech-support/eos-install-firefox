@@ -18,15 +18,17 @@ case ${DEB_ARCH} in
 esac
 
 DOWNLOAD_DIR=`xdg-user-dir DOWNLOAD`
-DOWNLOAD_PATTERN=${DOWNLOAD_DIR}/firefox-*.tar.bz2
+FIREFOX_PATTERN=${DOWNLOAD_DIR}/firefox-*.tar.bz2
+JAVA_PATTERN=${DOWNLOAD_DIR}/jre-*.tar.gz
 TEMP_DIR=`mktemp -d`
 DEST_DIR=~/.firefox
 WGET_COMMAND="wget -c --tries=5"
 FIREFOX_URL=https://www.mozilla.org/firefox/new/?scene=2
+JAVA_URL=http://javadl.oracle.com/webapps/download/AutoDL?BundleId=216424
 
 # Get Firefox
-echo "Removing any other version previously downloaded"
-rm -f ${DOWNLOAD_PATTERN}
+echo "Removing any other Firefox version previously downloaded"
+rm -f ${FIREFOX_PATTERN}
 echo "Running ${FIREFOX_URL} in browser to download Firefox"
 if ! chromium-browser "${FIREFOX_URL}"; then
     echo "Failed to run ${FIREFOX_URL} in browser"
@@ -34,14 +36,14 @@ if ! chromium-browser "${FIREFOX_URL}"; then
 fi
 
 # Need to wait for the download to complete
-while [ ! -e ${DOWNLOAD_PATTERN} ]
+while [ ! -e ${FIREFOX_PATTERN} ]
 do
     echo -n "."
     sleep 1
 done
 echo
 
-filename=`ls ${DOWNLOAD_PATTERN}`
+filename=`ls ${FIREFOX_PATTERN}`
 
 echo "Removing old version if installed"
 rm -rf ${DEST_DIR}
@@ -282,3 +284,31 @@ EOF
 eos-add-to-desktop firefox
 
 rm -rf ${TEMP_DIR}
+
+# Get Java
+echo "Removing any other Java version previously downloaded"
+rm -f ${JAVA_PATTERN}
+echo "Running ${JAVA_URL} in browser to download Java"
+if ! chromium-browser "${JAVA_URL}"; then
+    echo "Failed to run ${JAVA_URL} in browser"
+    exit 1
+fi
+
+# Need to wait for the download to complete
+while [ ! -e ${JAVA_PATTERN} ]
+do
+    echo -n "."
+    sleep 1
+done
+echo
+
+filename=`ls ${JAVA_PATTERN}`
+
+echo "Installing ${filename}"
+tar -xf ${filename} -C ${DEST_DIR}
+#mv ${DEST_DIR}/jre* ${DEST_DIR}/java
+
+rm ${filename}
+
+mkdir -p ~/.mozilla/plugins
+ln -s ${DEST_DIR}/jre*/lib/amd64/libnpjp2.so ~/.mozilla/plugins
